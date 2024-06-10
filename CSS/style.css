@@ -1,0 +1,17 @@
+*{
+    margin: none;
+    padding: none;
+    box-sizing: border-box;
+}
+
+#centralizaCanvas{
+    /* Centralizando o canvas */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+body{
+    background-color: gray; /* Mudando a cor de fundo da página */
+}
