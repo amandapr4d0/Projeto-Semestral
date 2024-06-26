@@ -189,9 +189,19 @@ carregaImagemBotaoOpcoes();
 carregaImagemBotaoSobre();
 
 // Event listener para detectar cliques no botão
+// Adiciona um ouvinte de evento para o clique do mouse no elemento canvas
 canvas.addEventListener("click", function(event) {
+    // Obtém o retângulo de limites do canvas, que fornece as coordenadas e dimensões do canvas em relação à viewport
     var rect = canvas.getBoundingClientRect();
+    
+    // Calcula a posição x do clique do mouse dentro do canvas
+    // event.clientX é a posição x do clique na viewport
+    // rect.left é a distância do lado esquerdo do canvas até o lado esquerdo da viewport
     var mouseX = event.clientX - rect.left;
+    
+    // Calcula a posição y do clique do mouse dentro do canvas
+    // event.clientY é a posição y do clique na viewport
+    // rect.top é a distância do topo do canvas até o topo da viewport
     var mouseY = event.clientY - rect.top;
 
     // Verifica se o clique está dentro da área do botão
@@ -400,14 +410,16 @@ Sky.prototype = {
 
         if (teclaDPressionada) {
             if(this.voando){
-                this.x += this.velocidade;
-                posicaoXs=this.x;
+                if(this.x < canvas.width / 2 - 200){
+                    this.x += this.velocidade;
+                }
+                posicaoXs = this.x;
                 if (this.y < this.posicaoInicialY && !teclaWPressionada) {
                     this.y += this.velocidade;
                     posicaoYs = this.y
                     if (this.y > this.posicaoInicialY) {
                         this.y = this.posicaoInicialY;
-                        posicaoYs=this.y;
+                        posicaoYs = this.y;
                     }
                 }
 
@@ -423,8 +435,12 @@ Sky.prototype = {
                 this.sheet.proximoQuadro();
             }
 
-            this.x += this.velocidade;
-            posicaoXs=this.x;
+            // Não deixa a arara sair do canvas
+            if(this.x < canvas.width / 2 - 200){
+                this.x += this.velocidade;
+            }
+            
+            posicaoXs = this.x;
 
         } else if (teclaAPressionada) {
             if (!this.andando || this.direcao != SKY_ESQUERDA) {
@@ -435,10 +451,15 @@ Sky.prototype = {
             this.andando = true;
             this.direcao = SKY_ESQUERDA;
             this.sheet.proximoQuadro();
-            this.x -= this.velocidade;
-            posicaoXs=this.x;
 
-        } else if (teclaWPressionada && teclaDPressionada) {
+            // Não deixa a arara sair do canvas
+            if(this.x > canvas.width - 1200){
+                this.x -= this.velocidade;
+            }
+            
+            posicaoXs = this.x;
+
+        } else if (teclaWPressionada && teclaDPressionada){
             if (!this.voando) {
                 this.sheet.linha = 4;
                 this.sheet.coluna = 0;
@@ -451,12 +472,12 @@ Sky.prototype = {
             // Mover o pássaro para cima até a altura máxima
             if (this.y > ALTURA_MAXIMA_VOAR) {
                 this.y -= this.velocidade;
-                posicaoYs=this.y;
+                posicaoYs = this.y;
             } 
 
             // Continuar movimento lateral enquanto voa
             this.x += this.velocidade;
-            posicaoXs=this.x;
+            posicaoXs = this.x;
 
             this.sheet.proximoQuadro();
         } else if (teclaWPressionada) {
@@ -473,7 +494,7 @@ Sky.prototype = {
             // Mover o pássaro para cima até a altura máxima
             if (this.y < ALTURA_MAXIMA_VOAR) {
                 this.y -= this.velocidade;
-                posicaoYs=this.y;
+                posicaoYs = this.y;
             } 
 
             this.sheet.proximoQuadro();
@@ -491,7 +512,7 @@ Sky.prototype = {
                         }
                     } else {
                         this.y = this.posicaoInicialY;
-                        posicaoYs=this.y;
+                        posicaoYs = this.y;
                         this.voando = false;
                         this.alcancouAlturaMaxima = false;
                         this.sheet.linha = 0;
@@ -562,6 +583,44 @@ function desenharQuadradosDeColisaoSky(context) {
     quadradosDeColisaoSky.forEach(function(quadrado) {
         context.strokeRect(quadrado.x, quadrado.y, quadrado.largura, quadrado.altura);
     });
+}
+
+// JS QUE CARREGA A TELA DE GAME OVER -----------------------------------------------
+
+var imagemLoaded = false;
+
+var imgGameOver = {
+       gameOver: "gameOver.png" 
+};
+
+// Função para identificar a imagem que carregará, e como será carregada
+function gameOver(){
+    for (var g in imgGameOver) {
+        var imagemGameOver = new Image();
+
+        // Definindo o src da imagem
+        imagemGameOver.src = "IMG/" + imgGameOver[g];
+
+        // Quando a imagem é carregada, chama a função
+        imagemGameOver.onload = function() {
+            imgGameOver[g] = imagemGameOver; // Substituindo a string pela imagem
+            imagemLoaded = true; // Definindo que a imagem de fundo está carregada
+            console.log("Imagem de fundo carregada");
+
+            carregarSpritesheet = false;
+
+            setInterval(desenhaGameOver, 10); // Chama a função que desenha a tela de game over, a cada 10 ms
+        };
+    }
+}
+
+function desenhaGameOver() {
+    if (!imagemLoaded) return; // Se a imagem carregou, retorne
+
+    // Desenha a parte da imagem no canvas
+    context.drawImage(imgGameOver.gameOver, 0, 0, canvas.width + 20, canvas.height + 20);
+
+    console.log("Perdeu");
 }
 
 // JS QUE CARREGA O FUNDO E FAZ ELE SE MOVER NO CANVAS -----------------------------------------------
@@ -649,6 +708,39 @@ document.addEventListener('keydown', function(event) {
 
 var posicaoXs = 0;
 var posicaoYs = 0;
+
+var carregarSpritesheet = true;
+
+function chamaSpritesheet(){
+    if(!carregarSpritesheet) return;
+
+    carregarFiguras();
+    requestAnimationFrame(moverCarro);
+    setInterval(desenhar, 10);
+    setInterval(passar, 100);
+    setInterval(colisor, 10);
+
+    // Carregar a spritesheet da Sky
+    var teclado = new Teclado(document);
+    var animacao = new Animacao(context);
+
+    var imgSky = new Image();
+    //imgSky.src = 'IMG/sky.png'; 
+    imgSky.src = "IMG/Freesky.png";
+    var sky = new Sky (context, teclado, imgSky);
+    sky.x = 0;
+    sky.y = 200;
+    console.log(sky.y);
+    animacao.novoSprite(sky);
+
+    imgSky.onload = function (){                                                                                                                                                              
+        animacao.ligar();
+    }
+    
+    x = 0;
+    posicaoX = 0;
+    executarFuncao = false; // Fazendo com que a fase anterior pare de ser carregada
+}
 
 // Função que desenhará os quadrados de colisão
 function desenhaColisao() {
@@ -748,32 +840,7 @@ function desenhaColisao() {
         // Se ... Carregar a outra fase
         if (mouseX >= quadrado9X && mouseY >= quadrado9Y
             && mouseX <= quadrado9X + quadrado9Largura && mouseY <= quadrado9Y + quadrado9Altura){
-                carregarFiguras();
-                requestAnimationFrame(moverCarro);
-                setInterval(desenhar, 10);
-                setInterval(passar, 100);
-                setInterval(colisor, 10);
-
-                // Carregar a spritesheet da Sky
-                var teclado = new Teclado(document);
-                var animacao = new Animacao(context);
-
-                var imgSky = new Image();
-                //imgSky.src = 'IMG/sky.png'; 
-                imgSky.src = "IMG/Freesky.png";
-                var sky = new Sky (context, teclado, imgSky);
-                sky.x = 0;
-                sky.y = 200;
-                console.log(sky.y);
-                animacao.novoSprite(sky);
-
-                imgSky.onload = function (){                                                                                                                                                              
-                    animacao.ligar();
-                }
-                
-                x = 0;
-                posicaoX = 0;
-                executarFuncao = false; // Fazendo com que a fase anterior pare de ser carregada
+                chamaSpritesheet();
         }
     });
 }
@@ -827,7 +894,7 @@ var larguraCarro = 254; // Largura do carro redimensionado no canvas
 var alturaCarro = 124; // Altura do carro redimensionado no canvas
 var velocidadeCarro = 5; // Velocidade de movimento do carro
 var velocidadeFundo = 40; // Velocidade de movimento do fundo
-var velocidadeBaseCarro = 3; // Velocidade base do carro
+var velocidadeBaseCarro = 2; // Velocidade base do carro
 var incrementoVelocidade = 0.5; // Incremento de velocidade do carro
 
 // Valor extra para o limite direito (em pixels)
@@ -888,15 +955,21 @@ function desenhar() {
         );
 
         // Atualiza a posição dos quadrados de colisão do carro para acompanhar a posição do carro
-        var larguraQuadro = 816; // Largura do quadro do carro na spritesheet
-        var alturaQuadro = 418; // Altura do quadro do carro na spritesheet
         var centroX = posicaoX + larguraCarro / 2;
         var centroY = canvas.height - 250 + alturaCarro / 2;
 
+        // Para cada elemento no array quadradosDeColisaoCarro, execute a função fornecida.
         quadradosDeColisaoCarro.forEach(function(quadrado) {
-            quadrado.x = centroX - quadrado.largura / 2;
-            quadrado.y = centroY - quadrado.altura / 2;
-        });
+            
+        // Atualiza a posição x do quadrado para que ele fique centralizado horizontalmente
+        // em relação a uma coordenada centroX, subtraindo metade da largura do quadrado.
+        quadrado.x = centroX - quadrado.largura / 2;
+        
+        // Atualiza a posição y do quadrado para que ele fique centralizado verticalmente
+        // em relação a uma coordenada centroY, subtraindo metade da altura do quadrado.
+        quadrado.y = centroY - quadrado.altura / 2;
+});
+
 
         // Desenha os quadrados de colisão do carro
         desenharQuadradosDeColisaoCarro(context);
@@ -948,6 +1021,8 @@ document.addEventListener('keyup', function(evento) {
     }
 });
 
+var tentativas = 3; // Número de tentativas para fazer o jogador perder
+
 function colisor() {
     if (posicaoFundoX >= pontoAparicaoCarro){
         // Desenhar o carro
@@ -961,7 +1036,7 @@ function colisor() {
     // Desenhar o objeto sky
     context.beginPath();
     context.fillRect(posicaoXs + 320, posicaoYs + 300, 50, 80); // Desenha o objeto sky com posição, largura e altura definidas
-    context.fillStyle = "rgba(0, 0, 0, 0)"; // Define a cor de preenchimento do objeto sky como vermelho
+    context.fillStyle = "rgba(0, 0, 0, 0)"; // Define a cor de preenchimento do objeto sky como transparente
     context.fill(); // Preenche o objeto sky com a cor definida
     context.closePath(); // Fecha o caminho do desenho do objeto sky
 
@@ -973,9 +1048,18 @@ function colisor() {
             canvas.height - 250 + alturaCarro > posicaoYs) { // Verifica a colisão na borda inferior do carro
             console.log("relou"); // Exibe uma mensagem de colisão no console
 
+            tentativas--; // Decrementa a variável tentativas, para o jogador perder
+
             posicaoFundoX = 0;
             cidadeX = 0;
         }
+    }
+
+    // Se o jogador bater nos carros três vezes, tela de game over
+    if(tentativas == 0){
+        carregarSpritesheet = false; // Mudar para false, para parar de chamar a spritesheet
+        gameOver() // Chama a função que carrega a imagem de game over
+        console.log("Perdeu");
     }
 }
 
